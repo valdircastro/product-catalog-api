@@ -19,11 +19,38 @@ public class ProductsController : ControllerBase
     public ActionResult<IEnumerable<Product>> GetAllProducts()
     {
         var productList = _appDbContext.Products.ToList();
-        if (productList is null)
+        // This always returns a list, if no elements ef returns a [] list
+        // It is safe to use count instead check null
+        if (productList.Count == 0)
         {
             return NotFound("Products not found");
         }
 
         return Ok(productList);
+    }
+
+    [HttpGet("{id:int}", Name = "GetProductById")]
+    public ActionResult<Product> GetProductById(int id)
+    {
+        var product = _appDbContext.Products.FirstOrDefault(p => p.ProductId == id);
+
+        if (product is null)
+        {
+            return NotFound("Product not found");
+        }
+
+        return product;
+    }
+
+    [HttpPost]
+    public ActionResult<Product> CreateProduct(Product? product)
+    {
+        if (product is null) return BadRequest();
+        
+        // Automatically verify the model and returns 400 if validations fails
+        _appDbContext.Products.Add(product);
+        _appDbContext.SaveChanges();
+
+        return new CreatedAtRouteResult("GetProductById", new { id = product.ProductId }, product);
     }
 }
