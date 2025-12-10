@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProductCatalogApi.Context;
 using ProductCatalogApi.Models;
 
@@ -45,12 +46,26 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public ActionResult<Product> CreateProduct(Product? product)
     {
-        if (product is null) return BadRequest();
-        
+        if (product is null)
+            return BadRequest();
+
         // Automatically verify the model and returns 400 if validations fails
         _appDbContext.Products.Add(product);
         _appDbContext.SaveChanges();
 
         return new CreatedAtRouteResult("GetProductById", new { id = product.ProductId }, product);
+    }
+
+    [HttpPut("{id:int}")]
+    public ActionResult UpdateProductById(int id, Product product)
+    {
+        if (id != product.ProductId)
+            return BadRequest("Payload product id differs from Route product id");
+
+        // What this line does?
+        _appDbContext.Entry(product).State = EntityState.Modified;
+        _appDbContext.SaveChanges();
+
+        return Ok(product);
     }
 }
